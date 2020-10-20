@@ -1,4 +1,4 @@
-package cz.bakalar;
+package cz.botaniculus.bakalari;
 
 import java.io.IOException;
 import java.util.Scanner;
@@ -13,9 +13,10 @@ public class Main {
         String username = scanner.nextLine();
         System.out.print("Password: ");
         String password = scanner.nextLine();
+        //login
+        bakal.login(username, password);
 
-        String output[] = bakal.login(username, password);
-
+        //timetable
         System.out.println(bakal.timetable());
     }
 }
