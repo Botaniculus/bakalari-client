@@ -1,5 +1,5 @@
 # Bakalari-client
-Is client of Bakaláři I am currently working on.
+It's client of Bakaláři I am currently working on.
 
 Capabilities:
 * Login the student
