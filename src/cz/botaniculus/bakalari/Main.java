@@ -1,6 +1,8 @@
 package cz.botaniculus.bakalari;
 
 import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.Scanner;
 
 public class Main {
@@ -22,8 +24,18 @@ public class Main {
         //user info
         System.out.println(bakal.userInfo());
 
+        //create date
+        SimpleDateFormat formatter = new SimpleDateFormat("dd");
+        Date date = new Date();
+        int den = Integer.parseInt(formatter.format(date));
+        formatter = new SimpleDateFormat("MM");
+        int mesic = Integer.parseInt(formatter.format(date));
+        formatter = new SimpleDateFormat("YYYY");
+        int rok = Integer.parseInt(formatter.format(date));
+
         //timetable
-        System.out.println(bakal.timetable(21, 10, 2020));
+        System.out.println(bakal.timetable(den, mesic, rok));
+
 
 
     }

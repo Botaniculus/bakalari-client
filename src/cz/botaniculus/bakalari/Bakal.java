@@ -7,12 +7,13 @@ import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.text.ParseException;
+import java.time.DayOfWeek;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.json.*;
 
-
+import static jdk.nashorn.internal.objects.NativeString.trim;
 
 
 public class Bakal {
@@ -23,6 +24,11 @@ public class Bakal {
     private String output;
     private String accessToken;
     private String refreshToken;
+
+    private int[] baseSubjectId;
+    private String[] baseSubjectAbbrev;
+    private String[] dayOfWeek;
+
 
     public void login(String username, String password, boolean refresh) throws IOException {
         if(!refresh) {
@@ -49,19 +55,56 @@ public class Bakal {
     public String timetable(int day, int month, int year) throws IOException {
         targetURL=new URL(baseURL+"/api/3/timetable/actual?date="+year+"-"+month+"-"+day);
         got=this.bakalari(targetURL, "GET", null, accessToken);
-
+        dayOfWeek= new String[]{"Pondělí", "Úterý", "Středa", "Čtvrtek", "Pátek"};
         JSONObject obj = new JSONObject(got);
-        JSONArray hours = obj.getJSONArray("Hours");
-
-        for(int i = 0 ; i < hours.length(); i++) {
-            System.out.print(hours.getJSONObject(i).getInt("Caption"));
-            System.out.print(" (" + hours.getJSONObject(i).getString("BeginTime"));
-            System.out.println(" - " + hours.getJSONObject(i).getString("EndTime")+ ")");
-
+        //JSONArray hours = obj.getJSONArray("Hours");
+        JSONArray days = obj.getJSONArray("Days");
+        JSONArray subjects = obj.getJSONArray("Subjects");
+        baseSubjectAbbrev=new String[subjects.length()];
+        baseSubjectId=new int[subjects.length()];
+        for(int h=0; h<subjects.length(); h++){
+            JSONObject sub = subjects.getJSONObject(h);
+            baseSubjectAbbrev[h]=sub.getString("Abbrev");
+            baseSubjectId[h] = Integer.parseInt(trim(sub.get("Id").toString()));
         }
 
+        for(int i=0; i<(days.length()); i++){
+            JSONObject den = days.getJSONObject(i);
+            JSONArray atoms = den.getJSONArray("Atoms");
 
+            System.out.print(dayOfWeek[(den.getInt("DayOfWeek")-1)]);
+            System.out.print(" "+ den.getString("Date")+"\n");
+            for(int f=0; f<atoms.length(); f++){
+                JSONObject hodina = atoms.getJSONObject(f);
+                int hourId = hodina.getInt("HourId");
+                String subjectString = trim(hodina.get("SubjectId")).toString();
+                int subjectId=0;
+                if(subjectString!="null"){
+                    subjectId = Integer.parseInt(subjectString);
+                }
+                int indexOfSubject=0;
+                for(int j=0; j<baseSubjectId.length; j++){
+                    if(subjectId==baseSubjectId[j]){
+                        indexOfSubject=j;
+                    }
+                }
+                String subjectAbbrev=baseSubjectAbbrev[indexOfSubject];
 
+                JSONObject changeIs = null;
+                String description="";
+                String change = hodina.get("Change").toString();
+                if (change != "null") {
+                    changeIs = hodina.getJSONObject("Change");
+                    description = changeIs.get("Description").toString();
+                }
+                String theme = hodina.get("Theme").toString();
+                System.out.println((hourId-2) + ": " + subjectAbbrev + " | " + theme);
+                if (description!="")
+                    System.out.println(" (" + description + ")");
+
+            }
+            System.out.println();
+        }
             return got;
     }
     private String bakalari(URL target, String method, String data, String token) throws IOException {
