@@ -1,12 +1,18 @@
 package cz.botaniculus.bakalari;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.text.ParseException;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.json.*;
+
+
 
 
 public class Bakal {
@@ -43,21 +49,20 @@ public class Bakal {
     public String timetable(int day, int month, int year) throws IOException {
         targetURL=new URL(baseURL+"/api/3/timetable/actual?date="+year+"-"+month+"-"+day);
         got=this.bakalari(targetURL, "GET", null, accessToken);
-        /*JSONObject obj = new JSONObject(output);
-        JSONArray Days = obj.getJSONArray("Days");
-        JSONArray Atoms = Days.getJSONArray(0);
-        JSONObject objAtoms = Atoms.getJSONObject(0);
-        String[] id = new String[objAtoms.length()];
-        String[] theme = new String[objAtoms.length()];
-        for(int i=0; i< Atoms.length(); i++){
-            id[i]=objAtoms.getString("HourId");
-            theme[i]=objAtoms.getString("Theme");
+
+        JSONObject obj = new JSONObject(got);
+        JSONArray hours = obj.getJSONArray("Hours");
+
+        for(int i = 0 ; i < hours.length(); i++) {
+            System.out.print(hours.getJSONObject(i).getInt("Caption"));
+            System.out.print(" (" + hours.getJSONObject(i).getString("BeginTime"));
+            System.out.println(" - " + hours.getJSONObject(i).getString("EndTime")+ ")");
 
         }
-        for(int i = 0; i< Atoms.length(); i++){
-            System.out.println(id[i]+" " + theme[i]);
-        }*/
-        return got;
+
+
+
+            return got;
     }
     private String bakalari(URL target, String method, String data, String token) throws IOException {
         output=null;
