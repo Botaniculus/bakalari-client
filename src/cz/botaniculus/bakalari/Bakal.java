@@ -9,6 +9,7 @@ import java.net.URL;
 
 import org.json.*;
 
+import static jdk.nashorn.internal.objects.NativeString.indexOf;
 import static jdk.nashorn.internal.objects.NativeString.trim;
 
 public class Bakal {
@@ -45,7 +46,7 @@ public class Bakal {
         }
         catch (IOException e){
             System.out.println("Wrong login or no internet!");
-
+            System.exit(0);
         }
 
         //-----Process JSON output---------------------------
