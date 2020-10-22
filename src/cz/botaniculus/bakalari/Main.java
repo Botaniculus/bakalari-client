@@ -23,10 +23,14 @@ public class Main {
         bakal.login(username, password, true);
 
         //user info
-        System.out.println(bakal.userInfo());
+        System.out.println(bakal.getUserInfo());
 
         //timetable
-        System.out.println(bakal.timetable(date()[0], date()[1], date()[2]));
+        System.out.println(bakal.getTimetable(date()[0], date()[1], date()[2]));
+        //System.out.println(bakal.getTimetable(7, 10, 2020));
+
+        //marks
+        System.out.println(bakal.getMarks());
     }
     public static int[] date(){
         int[] output = new int[3];
