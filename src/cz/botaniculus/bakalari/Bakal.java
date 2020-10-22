@@ -75,10 +75,10 @@ public class Bakal {
         JSONArray subjects = obj.getJSONArray("Subjects");
         baseSubjectAbbrev=new String[subjects.length()];
         baseSubjectId=new int[subjects.length()];
-        for(int h=0; h<subjects.length(); h++){
-            JSONObject sub = subjects.getJSONObject(h);
-            baseSubjectAbbrev[h]=sub.getString("Abbrev");
-            baseSubjectId[h] = Integer.parseInt(trim(sub.get("Id").toString()));
+        for(int a=0; a<subjects.length(); a++){
+            JSONObject sub = subjects.getJSONObject(a);
+            baseSubjectAbbrev[a]=sub.getString("Abbrev");
+            baseSubjectId[a] = Integer.parseInt(trim(sub.get("Id").toString()));
         }
         //-------------------
 
@@ -88,13 +88,13 @@ public class Bakal {
             JSONObject den = days.getJSONObject(i);
 
             //-----Day of week and Date-----
-            System.out.print(dayOfWeek[(den.getInt("DayOfWeek")-1)]);
-            System.out.print(" "+ den.getString("Date")+"\n");
+            System.out.print("\n"+dayOfWeek[(den.getInt("DayOfWeek")-1)]);
+            System.out.print(" "+ den.getString("Date"));
 
             //-----Lessons----------------
             JSONArray atoms = den.getJSONArray("Atoms");
-            for(int f=0; f<atoms.length(); f++){
-                JSONObject lesson = atoms.getJSONObject(f);
+            for(int j=0; j<atoms.length(); j++){
+                JSONObject lesson = atoms.getJSONObject(j);
 
                 int hourId = lesson.getInt("HourId");
 
@@ -105,9 +105,9 @@ public class Bakal {
                     subjectId = Integer.parseInt(subjectIdString);
                 }
                 int indexOfSubject=0;
-                for(int j=0; j<baseSubjectId.length; j++){
-                    if(subjectId==baseSubjectId[j]){
-                        indexOfSubject=j;
+                for(int k=0; k<baseSubjectId.length; k++){
+                    if(subjectId==baseSubjectId[k]){
+                        indexOfSubject=k;
                     }
                 }
                 String subjectAbbrev=baseSubjectAbbrev[indexOfSubject];
@@ -127,7 +127,10 @@ public class Bakal {
                 String theme = lesson.get("Theme").toString();
 
                 //---Print result---
-                System.out.println((hourId-2) + ": " + subjectAbbrev + " | " + theme);
+                System.out.print("\n"+(hourId-2) + ": " + subjectAbbrev);
+                if(!(theme.length()==0)) {
+                    System.out.print(" | " + theme);
+                }
 
                 //---If there is some change in timetable, print it---
                 if (changeDescription!="")
