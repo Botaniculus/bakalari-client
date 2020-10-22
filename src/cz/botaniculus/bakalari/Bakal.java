@@ -6,10 +6,6 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.text.ParseException;
-import java.time.DayOfWeek;
-import java.util.ArrayList;
-import java.util.List;
 
 import org.json.*;
 
@@ -17,7 +13,7 @@ import static jdk.nashorn.internal.objects.NativeString.trim;
 
 
 public class Bakal {
-    final private String baseURL = "https://www.gvp.cz/info";
+    private String baseURL;
     private URL targetURL;
     private String data;
     private String got;
@@ -29,7 +25,9 @@ public class Bakal {
     private String[] baseSubjectAbbrev;
     private String[] dayOfWeek;
 
-
+    public Bakal(String baseURL){
+        this.baseURL=baseURL;
+    }
     public void login(String username, String password, boolean refresh) throws IOException {
         if(!refresh) {
             data = "client_id=ANDR&grant_type=password&username=" + username + "&password=" + password;
@@ -38,27 +36,42 @@ public class Bakal {
             data = "client_id=ANDR&grant_type=refresh_token&refresh_token="+refreshToken;
         }
         targetURL=new URL(baseURL+"/api/login");
-        got=this.bakalari(targetURL, "POST", data, null);
+
+        //-----login--------------------------------------------------
+        try{
+            got=this.request(targetURL, "POST", data, null);
+        }
+        catch (IOException e){
+            System.out.println("Wrong login or no internet!");
+            Main.main(null);
+        }
+
+        //-----Process JSON output---------------------------
         JSONObject obj = new JSONObject(got);
         accessToken = obj.getString("access_token");
         refreshToken = obj.getString("refresh_token");
+
     }
 
     public String userInfo() throws IOException {
         targetURL=new URL(baseURL+"/api/3/user");
-        got=this.bakalari(targetURL, "GET", null, accessToken);
+        got=this.request(targetURL, "GET", null, accessToken);
 
+        //-----Process JSON output-------------------------
         JSONObject obj = new JSONObject(got);
         String FullName = obj.getString("FullName");
+
         return FullName;
     }
+
     public String timetable(int day, int month, int year) throws IOException {
-        targetURL=new URL(baseURL+"/api/3/timetable/actual?date="+year+"-"+month+"-"+day);
-        got=this.bakalari(targetURL, "GET", null, accessToken);
         dayOfWeek= new String[]{"Pondělí", "Úterý", "Středa", "Čtvrtek", "Pátek"};
+        targetURL=new URL(baseURL+"/api/3/timetable/actual?date="+year+"-"+month+"-"+day);
+        got=this.request(targetURL, "GET", null, accessToken);
         JSONObject obj = new JSONObject(got);
         //JSONArray hours = obj.getJSONArray("Hours");
-        JSONArray days = obj.getJSONArray("Days");
+
+        //-----Subjects----------------------------------------
         JSONArray subjects = obj.getJSONArray("Subjects");
         baseSubjectAbbrev=new String[subjects.length()];
         baseSubjectId=new int[subjects.length()];
@@ -67,20 +80,29 @@ public class Bakal {
             baseSubjectAbbrev[h]=sub.getString("Abbrev");
             baseSubjectId[h] = Integer.parseInt(trim(sub.get("Id").toString()));
         }
+        //-------------------
 
+        //-----Days---------------------------------------------------------------------------
+        JSONArray days = obj.getJSONArray("Days");
         for(int i=0; i<(days.length()); i++){
             JSONObject den = days.getJSONObject(i);
-            JSONArray atoms = den.getJSONArray("Atoms");
 
+            //-----Day of week and Date-----
             System.out.print(dayOfWeek[(den.getInt("DayOfWeek")-1)]);
             System.out.print(" "+ den.getString("Date")+"\n");
+
+            //-----Lessons----------------
+            JSONArray atoms = den.getJSONArray("Atoms");
             for(int f=0; f<atoms.length(); f++){
-                JSONObject hodina = atoms.getJSONObject(f);
-                int hourId = hodina.getInt("HourId");
-                String subjectString = trim(hodina.get("SubjectId")).toString();
+                JSONObject lesson = atoms.getJSONObject(f);
+
+                int hourId = lesson.getInt("HourId");
+
+                //-----Get subject and find its abbrevation-----
+                String subjectIdString = trim(lesson.get("SubjectId")).toString();
                 int subjectId=0;
-                if(subjectString!="null"){
-                    subjectId = Integer.parseInt(subjectString);
+                if(subjectIdString!="null"){
+                    subjectId = Integer.parseInt(subjectIdString);
                 }
                 int indexOfSubject=0;
                 for(int j=0; j<baseSubjectId.length; j++){
@@ -89,49 +111,67 @@ public class Bakal {
                     }
                 }
                 String subjectAbbrev=baseSubjectAbbrev[indexOfSubject];
+                //-----------------------------------------------
 
+                //-----Get info about changes in timetable-----
                 JSONObject changeIs = null;
-                String description="";
-                String change = hodina.get("Change").toString();
+                String changeDescription="";
+                String change = lesson.get("Change").toString();
                 if (change != "null") {
-                    changeIs = hodina.getJSONObject("Change");
-                    description = changeIs.get("Description").toString();
+                    changeIs = lesson.getJSONObject("Change");
+                    changeDescription = changeIs.get("Description").toString();
                 }
-                String theme = hodina.get("Theme").toString();
+                //-----------------------------------------------
+
+                //---Get theme of lesson---
+                String theme = lesson.get("Theme").toString();
+
+                //---Print result---
                 System.out.println((hourId-2) + ": " + subjectAbbrev + " | " + theme);
-                if (description!="")
-                    System.out.println(" (" + description + ")");
+
+                //---If there is some change in timetable, print it---
+                if (changeDescription!="")
+                    System.out.println(" (" + changeDescription + ")");
 
             }
             System.out.println();
         }
-            return got;
+
+        return got;
     }
-    private String bakalari(URL target, String method, String data, String token) throws IOException {
+    private String request(URL target, String method, String data, String token) throws IOException {
+        //clear output
         output=null;
-        HttpURLConnection conn = (HttpURLConnection)target.openConnection();
-        conn.setDoOutput(true);
-        conn.setInstanceFollowRedirects(true);
-        conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
-        conn.setRequestProperty("charset", "UTF-8");
-        if(token!=null) {
-            conn.setRequestProperty("Authorization", "Bearer " + token);
-        }
-        conn.setRequestMethod(method);
-        conn.setUseCaches(false);
-        if(data!=null){
-            conn.setRequestProperty("Content-Length", "" + Integer.toString(data.length()));
-            try(OutputStreamWriter out = new OutputStreamWriter(conn.getOutputStream())) {
-                out.write(data);
+
+        //-----Http request--------------------------------------------------
+            HttpURLConnection conn = (HttpURLConnection)target.openConnection();
+            conn.setDoOutput(true);
+            conn.setInstanceFollowRedirects(true);
+            conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
+            conn.setRequestProperty("charset", "UTF-8");
+            if(token!=null) {
+                conn.setRequestProperty("Authorization", "Bearer " + token);
             }
-        }
+            conn.setRequestMethod(method);
+            conn.setUseCaches(false);
+            if(data!=null){
+                conn.setRequestProperty("Content-Length", "" + Integer.toString(data.length()));
+                try(OutputStreamWriter out = new OutputStreamWriter(conn.getOutputStream())) {
+                    out.write(data);
+                }
+            }
+
+        //-----Read input stream-------------------------------------
         try(BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream()))){
             String currentLine;
             while((currentLine = in.readLine()) != null){
                 output+=currentLine;
             }
         }
+
+        //---remove "null" on the start of output JSON
         output=output.substring(4);
+
         return output;
     }
 }

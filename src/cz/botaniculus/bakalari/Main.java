@@ -8,35 +8,42 @@ import java.util.Scanner;
 public class Main {
     public static void main(String[] args) throws IOException {
         Scanner scanner = new Scanner(System.in, "Windows-1250");
-
-        Bakal bakal = new Bakal();
-
-        //Set master parameters
         System.out.print("Username: ");
         String username = scanner.nextLine();
         System.out.print("Password: ");
         String password = scanner.nextLine();
 
-        //login
+        Bakal bakal = new Bakal("https://www.gvp.cz/info");
+
+        //-----login---------------------------------
+        //If you have no refresh token:
         bakal.login(username, password, false);
+
+        //If you have refresh token
         bakal.login(username, password, true);
 
         //user info
         System.out.println(bakal.userInfo());
 
-        //create date
-        SimpleDateFormat formatter = new SimpleDateFormat("dd");
-        Date date = new Date();
-        int den = Integer.parseInt(formatter.format(date));
-        formatter = new SimpleDateFormat("MM");
-        int mesic = Integer.parseInt(formatter.format(date));
-        formatter = new SimpleDateFormat("YYYY");
-        int rok = Integer.parseInt(formatter.format(date));
-
         //timetable
-        System.out.println(bakal.timetable(den, mesic, rok));
+        System.out.println(bakal.timetable(date()[0], date()[1], date()[2]));
+    }
+    public static int[] date(){
+        int[] output = new int[3];
+        Date date = new Date();
+        SimpleDateFormat formatter;
+        //day
+        formatter = new SimpleDateFormat("dd");
+        output[0] = Integer.parseInt(formatter.format(date));
 
+        //month
+        formatter = new SimpleDateFormat("MM");
+        output[1] = Integer.parseInt(formatter.format(date));
 
+        //year
+        formatter = new SimpleDateFormat("YYYY");
+        output[2] = Integer.parseInt(formatter.format(date));
 
+        return output;
     }
 }
