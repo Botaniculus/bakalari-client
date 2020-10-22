@@ -11,8 +11,13 @@ import org.json.*;
 
 import static jdk.nashorn.internal.objects.NativeString.trim;
 
-
 public class Bakal {
+    final private String[] dayOfWeek = new String[]{"Pondělí", "Úterý", "Středa", "Čtvrtek", "Pátek"};
+
+    private int[] baseSubjectId;
+    private String[] baseSubjectAbbrev;
+    private String[] hourTimes;
+
     private String baseURL;
     private URL targetURL;
     private String data;
@@ -21,14 +26,10 @@ public class Bakal {
     private String accessToken;
     private String refreshToken;
 
-    private int[] baseSubjectId;
-    private String[] baseSubjectAbbrev;
-    private String[] dayOfWeek;
-
-    private String[] hourTimes;
     public Bakal(String baseURL){
         this.baseURL=baseURL;
     }
+
     public void login(String username, String password, boolean refresh) throws IOException {
         if(!refresh) {
             data = "client_id=ANDR&grant_type=password&username=" + username + "&password=" + password;
@@ -44,7 +45,7 @@ public class Bakal {
         }
         catch (IOException e){
             System.out.println("Wrong login or no internet!");
-            Main.main(null);
+
         }
 
         //-----Process JSON output---------------------------
@@ -70,6 +71,8 @@ public class Bakal {
         got=this.request(targetURL, "GET", null, accessToken);
         JSONObject obj = new JSONObject(got);
 
+        System.out.println("Známky:");
+
         JSONArray subjects = obj.getJSONArray("Subjects");
         for(int i=0; i<subjects.length(); i++){
             JSONObject subject = subjects.getJSONObject(i);
@@ -87,12 +90,14 @@ public class Bakal {
             String markDate="";
             for(int j=0; j<marks.length(); j++){
                 JSONObject mark = marks.getJSONObject(j);
-                String markText = mark.get("MarkText").toString();
+                String markText = mark.getString("MarkText");
                 String markCaption = mark.get("Caption").toString();
+                int weight = mark.getInt("Weight");
+                String date=this.getDate(mark.get("EditDate").toString());
                 marksString+="\t" +markText + " (";
                 if(markCaption.length()!=0)
                     marksString+=markCaption + ", ";
-                marksString+=this.getDate(mark.get("EditDate").toString()) + ")\n";
+                marksString+=", " + date + "), "+ "Váha: " + weight + "\n";
 
             }
             //---------------------------------------------
@@ -103,14 +108,14 @@ public class Bakal {
             result+=":\n"+marksString;
             System.out.println(result);
         }
-        return got;
+        return "";
     }
     public String getTimetable(int day, int month, int year) throws IOException {
-        dayOfWeek= new String[]{"Pondělí", "Úterý", "Středa", "Čtvrtek", "Pátek"};
         targetURL=new URL(baseURL+"/api/3/timetable/actual?date="+year+"-"+month+"-"+day);
         got=this.request(targetURL, "GET", null, accessToken);
         JSONObject obj = new JSONObject(got);
 
+        System.out.println("Rozvrh:");
         //-----Hours--------------------------------------
         JSONArray hours = obj.getJSONArray("Hours");
         hourTimes=new String[hours.length()];
@@ -124,12 +129,14 @@ public class Bakal {
 
         //-----Subjects----------------------------------------
         JSONArray subjects = obj.getJSONArray("Subjects");
-        baseSubjectAbbrev=new String[subjects.length()];
-        baseSubjectId=new int[subjects.length()];
+        baseSubjectAbbrev=new String[subjects.length()+1];
+        baseSubjectId=new int[subjects.length()+1];
+        baseSubjectId[0]=0;
+        baseSubjectAbbrev[0]="";
         for(int a=0; a<subjects.length(); a++){
             JSONObject sub = subjects.getJSONObject(a);
-            baseSubjectAbbrev[a]=sub.getString("Abbrev");
-            baseSubjectId[a] = Integer.parseInt(trim(sub.get("Id").toString()));
+            baseSubjectAbbrev[a+1]=sub.getString("Abbrev");
+            baseSubjectId[a+1] = Integer.parseInt(trim(sub.get("Id").toString()));
         }
         //-------------------
 
@@ -141,7 +148,7 @@ public class Bakal {
             //-----Day of week and Date-----------------------------
             String dateString=den.getString("Date");
             String dayOfWeekString = dayOfWeek[(den.getInt("DayOfWeek")-1)];
-            System.out.print("\n" + dayOfWeekString + " " + getDate(dateString));
+            System.out.print("\n\n" + dayOfWeekString + " " + getDate(dateString));
             //----------------------------------
 
             //-----Lessons--------------------------------------------------
@@ -150,21 +157,6 @@ public class Bakal {
                 JSONObject lesson = atoms.getJSONObject(j);
 
                 int hourId = lesson.getInt("HourId");
-
-                //-----Get subject id and find its abbrevation-----
-                String subjectIdString = trim(lesson.get("SubjectId")).toString();
-                int subjectId=0;
-                if(subjectIdString!="null"){
-                    subjectId = Integer.parseInt(subjectIdString);
-                }
-                int indexOfSubject=0;
-                for(int k=0; k<baseSubjectId.length; k++){
-                    if(subjectId==baseSubjectId[k]){
-                        indexOfSubject=k;
-                    }
-                }
-                String subjectAbbrev=baseSubjectAbbrev[indexOfSubject];
-                //-----------------------------------------------
 
                 //-----Get changes in timetable-----
                 JSONObject changeIs = null;
@@ -176,24 +168,39 @@ public class Bakal {
                 }
                 //-----------------------------------------------
 
+                //-----Get subject id and find its abbreviation-----
+                String subjectAbbrev="";
+
+                    String subjectIdString = trim(lesson.get("SubjectId")).toString();
+                    int subjectId = 0;
+                    if (subjectIdString != "null") {
+                        subjectId = Integer.parseInt(subjectIdString);
+                    }
+                    int indexOfSubject = 0;
+                    for (int k = 0; k < baseSubjectId.length; k++) {
+                        if (subjectId == baseSubjectId[k]) {
+                            indexOfSubject = k;
+                        }
+                    subjectAbbrev = baseSubjectAbbrev[indexOfSubject];
+
+                }
+                //-----------------------------------------------
                 //---Get theme of lesson---
                 String theme = lesson.get("Theme").toString();
 
                 //---Print result---
-                System.out.print("\n"+" " + (hourId-2) + ": " + subjectAbbrev + " " +(hourTimes[hourId-2]));
-                if(!(theme.length()==0)) {
-                    System.out.print(" | " + theme);
-                }
-
+                String result="\n"+" " + (hourId-2) + ": " + subjectAbbrev + " " +(hourTimes[hourId-2]);
+                if(theme!="null")
+                    result+=" | " + theme;
                 //---If there is some change in timetable, print it---
                 if (changeDescription!="")
-                    System.out.println(" (" + changeDescription + ")");
+                    result+=" (" + changeDescription + ")";
 
+                System.out.print(result);
             }
-            System.out.println();
-        }
 
-        return got;
+        }
+        return "\n\n";
     }
     private String request(URL target, String method, String data, String token) throws IOException {
         //clear output
@@ -233,6 +240,7 @@ public class Bakal {
     private String getDate(String dateString){
         String[] dateInt=dateString.split("-");
         dateInt[2]=dateInt[2].substring(0, 2);
+        dateInt[2]=dateInt[2].replaceFirst("^0+(?!$)", "");
         String date=dateInt[2] + ". " + dateInt[1] + ". " + dateInt[0];
 
         return date;

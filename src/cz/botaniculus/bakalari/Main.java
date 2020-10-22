@@ -26,8 +26,8 @@ public class Main {
         System.out.println(bakal.getUserInfo());
 
         //timetable
-        System.out.println(bakal.getTimetable(date()[0], date()[1], date()[2]));
-        //System.out.println(bakal.getTimetable(7, 10, 2020));
+        //System.out.println(bakal.getTimetable(date()[0], date()[1], date()[2]));
+        System.out.println(bakal.getTimetable(7, 10, 2020));
 
         //marks
         System.out.println(bakal.getMarks());
