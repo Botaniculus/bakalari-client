@@ -6,15 +6,11 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
-
 import org.json.*;
-
-import static jdk.nashorn.internal.objects.NativeString.indexOf;
 import static jdk.nashorn.internal.objects.NativeString.trim;
 
 public class Bakal {
     final private String[] dayOfWeek = new String[]{"Pondělí", "Úterý", "Středa", "Čtvrtek", "Pátek"};
-
     private int[] baseSubjectId;
     private String[] baseSubjectAbbrev;
     private String[] hourTimes;
