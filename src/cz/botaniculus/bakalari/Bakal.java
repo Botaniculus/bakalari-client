@@ -25,6 +25,7 @@ public class Bakal {
     private String[] baseSubjectAbbrev;
     private String[] dayOfWeek;
 
+    private String[] hourTimes;
     public Bakal(String baseURL){
         this.baseURL=baseURL;
     }
@@ -69,7 +70,17 @@ public class Bakal {
         targetURL=new URL(baseURL+"/api/3/timetable/actual?date="+year+"-"+month+"-"+day);
         got=this.request(targetURL, "GET", null, accessToken);
         JSONObject obj = new JSONObject(got);
-        //JSONArray hours = obj.getJSONArray("Hours");
+
+        //-----Hours--------------------------------------
+        JSONArray hours = obj.getJSONArray("Hours");
+        hourTimes=new String[hours.length()];
+        for(int i=0; i<hours.length(); i++){
+            JSONObject hour=hours.getJSONObject(i);
+            String BeginTime = hour.getString("BeginTime");
+            String EndTime = hour.getString("EndTime");
+            hourTimes[i]="(" +BeginTime + " - " + EndTime+")";
+        }
+        //------------------------
 
         //-----Subjects----------------------------------------
         JSONArray subjects = obj.getJSONArray("Subjects");
@@ -97,6 +108,7 @@ public class Bakal {
                 JSONObject lesson = atoms.getJSONObject(j);
 
                 int hourId = lesson.getInt("HourId");
+
 
                 //-----Get subject and find its abbrevation-----
                 String subjectIdString = trim(lesson.get("SubjectId")).toString();
@@ -127,7 +139,7 @@ public class Bakal {
                 String theme = lesson.get("Theme").toString();
 
                 //---Print result---
-                System.out.print("\n"+(hourId-2) + ": " + subjectAbbrev);
+                System.out.print("\n"+(hourTimes[hourId-2])+" " + (hourId-2) + ": " + subjectAbbrev);
                 if(!(theme.length()==0)) {
                     System.out.print(" | " + theme);
                 }
