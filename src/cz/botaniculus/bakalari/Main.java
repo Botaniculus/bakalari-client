@@ -20,14 +20,14 @@ public class Main {
         bakal.login(username, password, false);
 
         //If you have refresh token
-        bakal.login(username, password, true);
+        //bakal.login(username, password, true);
 
         //user info
         System.out.println(bakal.getUserInfo());
 
         //timetable
-        //System.out.println(bakal.getTimetable(date()[0], date()[1], date()[2]));
-        System.out.println(bakal.getTimetable(7, 10, 2020));
+        System.out.println(bakal.getTimetable(date()[0], date()[1], date()[2]));
+        //System.out.println(bakal.getTimetable(7, 10, 2020));
 
         //marks
         System.out.println(bakal.getMarks());

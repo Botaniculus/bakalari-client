@@ -97,7 +97,7 @@ public class Bakal {
                 marksString+="\t" +markText + " (";
                 if(markCaption.length()!=0)
                     marksString+=markCaption + ", ";
-                marksString+=", " + date + "), "+ "Váha: " + weight + "\n";
+                marksString+=date + "), "+ "Váha: " + weight + "\n";
 
             }
             //---------------------------------------------
